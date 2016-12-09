@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="sql_create_projects">
+    CREATE TABLE IF NOT EXISTS PROJECTS (
+      Id INTEGER PRIMARY KEY AUTOINCREMENT,
+      CTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+      MTime DATETIME,
+      AltMD5 TEXT,
+      Pos INTEGER,
+      Name TEXT,
+      Json TEXT,
+      Thumbnail TEXT,
+      Owner TEXT,
+      Galllery TEXT,
+      Deleted TEXT,
+      Version TEXT
+      )
+  </string>
+  <string name="sql_create_usershapes">
+    create table if not exists usershapes (
+      Id integer primary key autoincrement,
+      CTime datetime default current_timestamp,
+      MD5 text,
+      AltMD5 text,
+      Width text,
+      Height text,
+      Ext text,
+      Name text,
+      Owner text,
+      Scale text,
+      Version text
+      )
+  </string>
+  <string name="sql_create_userbkgs">
+    create table if not exists userbkgs (
+    Id integer primary key autoincrement,
+    CTime datetime default current_timestamp,
+    MD5 text,
+    AltMD5 text,
+    Width text,
+    Height text,
+    Ext text,
+    Owner text,
+    Version text
+  </string>
+  <string name="sql_add_gift">
+    alter table projects add column IsGift integer default 0;
+  </string>
+</resources>
