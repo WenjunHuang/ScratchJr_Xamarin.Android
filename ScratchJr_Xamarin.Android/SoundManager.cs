@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.Remoting.Channels;
 using System.Threading;
 using System.Threading.Tasks;
+using Android.Content;
 using Android.Content.Res;
 using Android.Media;
 using Android.Util;
@@ -20,7 +21,7 @@ namespace ScratchJr.Android
     public class SoundManager
     {
         private const string LogTag = nameof(SoundManager);
-        private readonly ScratchJrActivity _application;
+        private readonly Context _application;
         private const string Html5BasePath = "HTML5";
 
         /// <summary>
@@ -36,7 +37,8 @@ namespace ScratchJr.Android
         /// <summary>
         /// Active sounds playing currently
         /// </summary>
-        private readonly ConcurrentDictionary<int, MediaPlayer> _activeSoundMap = new ConcurrentDictionary<int, MediaPlayer>();
+        private readonly ConcurrentDictionary<int, MediaPlayer> _activeSoundMap =
+            new ConcurrentDictionary<int, MediaPlayer>();
 
         /// <summary>
         /// Running count of active sounds, so each one has a unique id
@@ -48,11 +50,16 @@ namespace ScratchJr.Android
         /// </summary>
         private readonly HashSet<string> _html5AssetList;
 
-        public SoundManager(ScratchJrActivity application)
+        public SoundManager(Context application)
         {
             _application = application;
-            _html5AssetList = new HashSet<string>(ListHTML5Assets(application));
-            LoadSoundEffectsAsync();
+            _html5AssetList = new HashSet<string>(ListHtml5Assets(application));
+            LoadDefaultSoundEffects();
+        }
+
+        public IEnumerable<string> GetSoundEffectNames()
+        {
+            return _soundEffectMap.Keys;
         }
 
         public void PlaySoundEffect(string name)
@@ -71,7 +78,10 @@ namespace ScratchJr.Android
                 int soundId;
                 if (_soundEffectMap.TryGetValue(name, out soundId))
                 {
-                    _soundEffectPool.Play(soundId, volume, volume, 0, 0, 1.0f);
+                    var result = _soundEffectPool.Play(soundId, volume, volume, 0, 0, 1.0f);
+                    if (result == 0)
+                    {
+                    }
                 }
                 else
                 {
@@ -87,7 +97,7 @@ namespace ScratchJr.Android
         /// comes from an absolute path.
         /// </param>
         /// <returns>An id which can be used to stop the sound later.</returns>
-        public async Task<int> PlaySoundAsync(string file)
+        public  int PlaySoundAsync(string file)
         {
             if (file.Equals("pop.mp3"))
             {
@@ -120,10 +130,7 @@ namespace ScratchJr.Android
                 fd = afd.FileDescriptor;
                 startOffset = afd.StartOffset;
                 length = afd.Length;
-                closeTask = () =>
-                {
-                    afd.Close();
-                };
+                closeTask = () => { afd.Close(); };
             }
             else
             {
@@ -132,10 +139,7 @@ namespace ScratchJr.Android
                 fd = input.FD;
                 startOffset = 0;
                 length = new FileInfo(soundFile).Length;
-                closeTask = () =>
-                {
-                    input.Close();
-                };
+                closeTask = () => { input.Close(); };
             }
 
             player.SetDataSource(fd, startOffset, length);
@@ -147,16 +151,14 @@ namespace ScratchJr.Android
                 closeTask();
             };
 
-            var tc = new TaskCompletionSource<int>();
             player.Prepared += (sender, args) =>
             {
                 var mp = sender as MediaPlayer;
                 mp?.Start();
-                tc.SetResult(result);
             };
             player.PrepareAsync();
 
-            return await tc.Task;
+            return result;
         }
 
         /// <summary>
@@ -201,7 +203,7 @@ namespace ScratchJr.Android
         /// </summary>
         public void Open()
         {
-            LoadSoundEffectsAsync();
+            LoadDefaultSoundEffects();
         }
 
         /// <summary>
@@ -223,7 +225,7 @@ namespace ScratchJr.Android
             _activeSoundMap.Clear();
         }
 
-        private void LoadSoundEffectsAsync()
+        private void LoadDefaultSoundEffects()
         {
             if (_soundEffectPool == null)
             {
@@ -231,13 +233,13 @@ namespace ScratchJr.Android
 
                 // Load all sound effects into memory
                 var assetManager = _application.Assets;
-                var soundEffects = assetManager.List(Path.Combine(Html5BasePath,"sounds"));
+                var soundEffects = assetManager.List(Path.Combine(Html5BasePath, "sounds"));
                 LoadSoundEffects(assetManager, Path.Combine(Html5BasePath, "sounds"), soundEffects);
                 LoadSoundEffects(assetManager, Html5BasePath, "pop.mp3");
             }
         }
 
-        private void LoadSoundEffects(AssetManager assetManager, string basePath, params string[] soundEffects)
+        internal void LoadSoundEffects(AssetManager assetManager, string basePath, params string[] soundEffects)
         {
             foreach (var fileName in soundEffects)
             {
@@ -247,7 +249,7 @@ namespace ScratchJr.Android
             }
         }
 
-        private List<string> ListHTML5Assets(ScratchJrActivity application)
+        internal List<string> ListHtml5Assets(Context application)
         {
             var result = new List<string>();
             result.AddRange(application.Assets.List(Html5BasePath));

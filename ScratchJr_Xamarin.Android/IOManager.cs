@@ -26,7 +26,7 @@ namespace ScratchJr.Android
         public const string LogTag = nameof(IOManager);
         public readonly char[] HexArray = "0123456789abcdef".ToCharArray();
 
-        private readonly ScratchJrActivity _application;
+        private readonly Activity _application;
         private readonly DatabaseManager _databaseManager;
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace ScratchJr.Android
         /// </summary>
         private readonly Dictionary<string, string> _mediaStrings = new Dictionary<string, string>();
 
-        public IOManager(ScratchJrActivity application, DatabaseManager databaseManager)
+        public IOManager(Activity application, DatabaseManager databaseManager)
         {
             _application = application;
             _databaseManager = databaseManager;
